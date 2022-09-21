@@ -17,13 +17,22 @@ type FixedGPool struct {
 	TaskChan   chan *FutureTask
 	isShutdown *AtomicBool
 	// Context
-	Ctx context.Context
+	ctx    context.Context
+	cancel context.CancelFunc
+}
+
+func (p *FixedGPool) TaskQueueCap() int {
+	return cap(p.TaskChan)
+}
+
+func (p *FixedGPool) TaskQueueLength() int {
+	return len(p.TaskChan)
 }
 
 func NewFixedGPool(ctx context.Context, size int) ExecutorService {
 	pool := FixedGPool{}
 	pool.Size = size
-	pool.Ctx = ctx
+	pool.ctx, pool.cancel = context.WithCancel(ctx)
 	pool.isShutdown = NewAtomicBool(false)
 	pool.TaskChan = make(chan *FutureTask, SIZE)
 	for i := 0; i < size; i++ {
@@ -40,7 +49,7 @@ func (p *FixedGPool) Consume() {
 }
 
 func (p *FixedGPool) Submit(task Callable) Future {
-	t := NewFutureTask(p.Ctx, task)
+	t := NewFutureTask(p.ctx, task)
 	p.TaskChan <- t
 	p.wg.Add(1)
 	return t

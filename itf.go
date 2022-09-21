@@ -18,9 +18,12 @@ type Future interface {
 }
 
 type ExecutorService interface {
-	// 不再接收新的任务，等所有任务执行完毕，就终止协程池
+	// no longer accept new tasks
 	Shutdown()
 	Submit(task Callable) Future
 	IsShutdown() bool
+	// 等所有任务执行完毕，就终止协程池
 	WaitTerminate()
+	TaskQueueCap() int
+	TaskQueueLength() int
 }
