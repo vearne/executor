@@ -22,7 +22,7 @@ type ExecutorService interface {
 	Shutdown()
 	Submit(task Callable) Future
 	IsShutdown() bool
-	// 等所有任务执行完毕，就终止协程池
+	// Wait for all the tasks to be completed
 	WaitTerminate()
 	TaskQueueCap() int
 	TaskQueueLength() int
