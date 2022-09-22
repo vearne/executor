@@ -105,15 +105,18 @@ func NewDynamicGPool(ctx context.Context, min int, max int, opts ...dynamicOptio
 
 func (p *DynamicGPool) Shutdown() {
 	slog.Debug("DynamicGPool-Shutdown()")
-	close(p.TaskChan)
 	p.isShutdown.Set(true)
 }
 
 // When submitting tasks, blocking may occur
-func (p *DynamicGPool) Submit(task Callable) Future {
-	p.wg.Add(1)
+func (p *DynamicGPool) Submit(task Callable) (Future, error) {
+	if p.IsShutdown() {
+		return nil, PoolShutdownErr
+	}
 
+	p.wg.Add(1)
 	t := NewFutureTask(p.ctx, task)
+
 	select {
 	case p.TaskChan <- t:
 		// push into TaskChan
@@ -140,7 +143,7 @@ func (p *DynamicGPool) Submit(task Callable) Future {
 		// blocking may occur
 		p.TaskChan <- t
 	}
-	return t
+	return t, nil
 }
 
 func (p *DynamicGPool) IsShutdown() bool {
@@ -153,7 +156,7 @@ func (p *DynamicGPool) CurrGCount() int {
 
 func (p *DynamicGPool) WaitTerminate() {
 	if !p.IsShutdown() {
-		panic("pool must shutdown first!")
+		p.Shutdown()
 	}
 	p.wg.Wait()
 }
@@ -298,17 +301,11 @@ func (worker *Worker) Start() {
 func (worker *Worker) execute() {
 	for worker.RunningFlag.IsTrue() {
 		select {
-		case task, ok := <-worker.pool.TaskChan:
-			if ok {
-				worker.busyFlag.Set(true)
-				task.run()
-				worker.busyFlag.Set(false)
-				worker.pool.wg.Done()
-			} else {
-				// Task queue has been shutdown.So worker should exit quietly.
-				slog.Debug("Worker exit quietly.")
-				worker.RunningFlag.Set(false)
-			}
+		case task := <-worker.pool.TaskChan:
+			worker.busyFlag.Set(true)
+			task.run()
+			worker.busyFlag.Set(false)
+			worker.pool.wg.Done()
 		case <-worker.ExitChan:
 			// exit
 			slog.Debug("worker exiting")

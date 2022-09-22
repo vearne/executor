@@ -2,6 +2,7 @@ package executor
 
 import (
 	"context"
+	slog "github.com/vearne/simplelog"
 	"sync"
 )
 
@@ -77,15 +78,18 @@ func (p *FixedGPool) Consume() {
 }
 
 // When submitting tasks, blocking may occur
-func (p *FixedGPool) Submit(task Callable) Future {
+func (p *FixedGPool) Submit(task Callable) (Future, error) {
+	if p.IsShutdown() {
+		return nil, PoolShutdownErr
+	}
 	p.wg.Add(1)
 	t := NewFutureTask(p.ctx, task)
 	p.TaskChan <- t
-	return t
+	slog.Debug("add task to TaskChan")
+	return t, nil
 }
 
 func (p *FixedGPool) Shutdown() {
-	close(p.TaskChan)
 	p.isShutdown.Set(true)
 }
 
@@ -95,7 +99,7 @@ func (p *FixedGPool) IsShutdown() bool {
 
 func (p *FixedGPool) WaitTerminate() {
 	if !p.IsShutdown() {
-		panic("pool must shutdown first!")
+		p.Shutdown()
 	}
 	p.wg.Wait()
 }

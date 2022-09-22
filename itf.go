@@ -20,7 +20,7 @@ type Future interface {
 type ExecutorService interface {
 	// no longer accept new tasks
 	Shutdown()
-	Submit(task Callable) Future
+	Submit(task Callable) (Future, error)
 	IsShutdown() bool
 	// Wait for all the tasks to be completed
 	WaitTerminate()

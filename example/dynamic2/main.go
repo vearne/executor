@@ -12,7 +12,6 @@ type MyCallable struct {
 }
 
 func (m *MyCallable) Call(ctx context.Context) *executor.GPResult {
-	time.Sleep(3 * time.Second)
 	r := executor.GPResult{}
 	r.Value = m.param * m.param
 	r.Err = nil
@@ -25,18 +24,23 @@ func main() {
 	   options:
 	   executor.WithTaskQueueCap() : set capacity of task queue
 	*/
-	pool := executor.NewDynamicGPool(context.Background(), 5, 30,
+	pool := executor.NewDynamicGPool(context.Background(), 3, 10,
 		executor.WithDynamicTaskQueueCap(5),
 		executor.WithDetectInterval(time.Second*10),
 		executor.WithMeetCondNum(3),
 	)
 	futureList := make([]executor.Future, 0)
 	var f executor.Future
-	for i := 0; i < 100; i++ {
-		task := &MyCallable{param: i}
-		f = pool.Submit(task)
-		futureList = append(futureList, f)
-	}
+	var err error
+	go func() {
+		for i := 0; i < 100; i++ {
+			task := &MyCallable{param: i}
+			f, err = pool.Submit(task)
+			if err == nil {
+				futureList = append(futureList, f)
+			}
+		}
+	}()
 	pool.Shutdown() // Prohibit submission of new tasks
 	var result *executor.GPResult
 	for _, f := range futureList {
