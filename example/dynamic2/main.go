@@ -12,7 +12,7 @@ type MyCallable struct {
 }
 
 func (m *MyCallable) Call(ctx context.Context) *executor.GPResult {
-	time.Sleep(1 * time.Second)
+	time.Sleep(3 * time.Second)
 	r := executor.GPResult{}
 	r.Value = m.param * m.param
 	r.Err = nil
@@ -20,15 +20,19 @@ func (m *MyCallable) Call(ctx context.Context) *executor.GPResult {
 }
 
 func main() {
-	pool := executor.NewFixedGPool(context.Background(), 10)
+	//pool := executor.NewDynamicGPool(context.Background(), 5, 30)
 	/*
 	   options:
 	   executor.WithTaskQueueCap() : set capacity of task queue
 	*/
-	//pool := executor.NewFixedGPool(context.Background(), 10, executor.WithTaskQueueCap(50))
+	pool := executor.NewDynamicGPool(context.Background(), 5, 30,
+		executor.WithDynamicTaskQueueCap(5),
+		executor.WithDetectInterval(time.Second*10),
+		executor.WithMeetCondNum(3),
+	)
 	futureList := make([]executor.Future, 0)
 	var f executor.Future
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 100; i++ {
 		task := &MyCallable{param: i}
 		f = pool.Submit(task)
 		futureList = append(futureList, f)

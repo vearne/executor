@@ -104,6 +104,7 @@ func NewDynamicGPool(ctx context.Context, min int, max int, opts ...dynamicOptio
 }
 
 func (p *DynamicGPool) Shutdown() {
+	slog.Debug("DynamicGPool-Shutdown()")
 	close(p.TaskChan)
 	p.isShutdown.Set(true)
 }
@@ -118,6 +119,7 @@ func (p *DynamicGPool) Submit(task Callable) Future {
 		// push into TaskChan
 		slog.Debug("add task to TaskChan")
 	default:
+		slog.Debug("try to create worker")
 		// If the TaskChan is full, try to add workers to execute the task
 		curr := atomic.LoadInt32(&p.currGCount)
 		if curr < p.max {
@@ -125,10 +127,10 @@ func (p *DynamicGPool) Submit(task Callable) Future {
 			if newValue <= p.max {
 				// create new worker
 				p.rwMutex.Lock()
-
 				w := NewWorker(p)
 				p.workerList = append(p.workerList, w)
 				p.rwMutex.Unlock()
+
 				go w.Start()
 			} else {
 				// rollback
@@ -296,14 +298,20 @@ func (worker *Worker) Start() {
 func (worker *Worker) execute() {
 	for worker.RunningFlag.IsTrue() {
 		select {
-		case task := <-worker.pool.TaskChan:
-			worker.busyFlag.Set(true)
-			task.run()
-			worker.busyFlag.Set(false)
-
-			worker.pool.wg.Done()
+		case task, ok := <-worker.pool.TaskChan:
+			if ok {
+				worker.busyFlag.Set(true)
+				task.run()
+				worker.busyFlag.Set(false)
+				worker.pool.wg.Done()
+			} else {
+				// Task queue has been shutdown.So worker should exit quietly.
+				slog.Debug("Worker exit quietly.")
+				worker.RunningFlag.Set(false)
+			}
 		case <-worker.ExitChan:
 			// exit
+			slog.Debug("worker exiting")
 		}
 	}
 	close(worker.ExitedFlag)

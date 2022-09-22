@@ -1,9 +1,23 @@
 # executor
+[![golang-ci](https://github.com/vearne/executor/actions/workflows/golang-ci.yml/badge.svg)](https://github.com/vearne/executor/actions/workflows/golang-ci.yml)
+
 goroutine pool
+
+* [中文 README](https://github.com/vearne/executor/blob/master/README_zh.md)
 
 ## Feature
 * supports cancel s single task or cancel all tasks in the goroutine pool.
-* Multiple types of goroutine pools can be created(FixedGPool|DynamicGPool).
+* Multiple types of goroutine pools can be created(SingleGPool|FixedGPool|DynamicGPool).
+
+## Multiple types of goroutine pools
+|||
+|:---|:---|:---|
+
+## debug
+optional value: debug | info | warn | error
+```
+export SIMPLE_LOG_LEVEL=debug
+```
 
 ## Inspired by Java Executors
 [Executors](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Executors.html)

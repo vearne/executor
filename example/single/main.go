@@ -33,8 +33,7 @@ func main() {
 		f = pool.Submit(task)
 		futureList = append(futureList, f)
 	}
-	pool.Shutdown() // 禁止提交新的任务
-	//pool.Submit(&MyCallable{param: 20})
+	pool.Shutdown() // Prohibit submission of new tasks
 	var result *executor.GPResult
 	for _, f := range futureList {
 		result = f.Get()
