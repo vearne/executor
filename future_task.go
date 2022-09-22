@@ -47,7 +47,7 @@ func (f *FutureTask) run() {
 		f.isDone.Set(true)
 	case <-f.ctx.Done():
 		// cancel
-		f.ch <- &GPResult{Err: TaskCanceledErr}
+		f.ch <- &GPResult{Err: ErrTaskCanceled}
 	}
 }
 

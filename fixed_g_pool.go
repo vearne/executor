@@ -45,6 +45,10 @@ func NewFixedGPool(ctx context.Context, size int, opts ...option) ExecutorServic
 		opt(defaultOpts)
 	}
 
+	if defaultOpts.taskQueueCap < 0 {
+		panic(ErrInvalidTaskQueueCap)
+	}
+
 	pool := FixedGPool{}
 	pool.Size = size
 	pool.ctx, pool.cancel = context.WithCancel(ctx)
@@ -78,6 +82,9 @@ func (p *FixedGPool) Consume() {
 
 // When submitting tasks, blocking may occur
 func (p *FixedGPool) Submit(task Callable) Future {
+	if p.IsShutdown() {
+		panic(ErrShutDowned)
+	}
 	p.wg.Add(1)
 	t := NewFutureTask(p.ctx, task)
 	p.TaskChan <- t
