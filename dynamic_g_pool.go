@@ -103,6 +103,7 @@ func NewDynamicGPool(ctx context.Context, min int, max int, opts ...dynamicOptio
 	return &pool
 }
 
+// New tasks may be added even after shutdown
 func (p *DynamicGPool) Shutdown() {
 	slog.Debug("DynamicGPool-Shutdown()")
 	p.isShutdown.Set(true)
@@ -150,7 +151,7 @@ func (p *DynamicGPool) IsShutdown() bool {
 	return p.isShutdown.IsTrue()
 }
 
-func (p *DynamicGPool) CurrGCount() int {
+func (p *DynamicGPool) CurrentGCount() int {
 	return int(atomic.LoadInt32(&p.currGCount))
 }
 

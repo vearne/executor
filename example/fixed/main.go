@@ -12,7 +12,7 @@ type MyCallable struct {
 }
 
 func (m *MyCallable) Call(ctx context.Context) *executor.GPResult {
-	time.Sleep(1 * time.Second)
+	time.Sleep(3 * time.Second)
 	r := executor.GPResult{}
 	r.Value = m.param * m.param
 	r.Err = nil
@@ -30,10 +30,11 @@ func main() {
 	var f executor.Future
 	var err error
 	go func() {
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 1000; i++ {
 			task := &MyCallable{param: i}
 			f, err = pool.Submit(task)
 			if err == nil {
+				fmt.Println("add task", i)
 				futureList = append(futureList, f)
 			}
 		}

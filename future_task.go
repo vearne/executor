@@ -17,7 +17,7 @@ func NewFutureTask(ctx context.Context, c Callable) *FutureTask {
 	t := FutureTask{}
 	t.ctx, t.cancel = context.WithCancel(ctx)
 	t.c = c
-	t.ch = make(chan *GPResult)
+	t.ch = make(chan *GPResult, 1)
 	t.isDone = NewAtomicBool(false)
 	t.isCancelled = NewAtomicBool(false)
 	return &t

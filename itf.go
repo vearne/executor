@@ -27,4 +27,5 @@ type ExecutorService interface {
 	TaskQueueCap() int
 	TaskQueueLength() int
 	Cancel() bool
+	CurrentGCount() int
 }

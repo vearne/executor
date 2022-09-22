@@ -33,15 +33,14 @@ func main() {
 	futureList := make([]executor.Future, 0)
 	var f executor.Future
 	var err error
-	go func() {
-		for i := 0; i < 100; i++ {
-			task := &MyCallable{param: i}
-			f, err = pool.Submit(task)
-			if err == nil {
-				futureList = append(futureList, f)
-			}
+	for i := 0; i < 100; i++ {
+		task := &MyCallable{param: i}
+		f, err = pool.Submit(task)
+		if err == nil {
+			futureList = append(futureList, f)
 		}
-	}()
+		fmt.Println("CurrentGCount", pool.CurrentGCount())
+	}
 	pool.Shutdown() // Prohibit submission of new tasks
 	var result *executor.GPResult
 	for _, f := range futureList {

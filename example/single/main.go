@@ -20,20 +20,30 @@ func (m *MyCallable) Call(ctx context.Context) *executor.GPResult {
 }
 
 func main() {
-	pool := executor.NewSingleGPool(context.Background())
+	//pool := executor.NewSingleGPool(context.Background())
 	/*
 	   options:
 	   executor.WithTaskQueueCap() : set capacity of task queue
 	*/
-	//pool := executor.NewSingleGPool(context.Background(), executor.WithTaskQueueCap(50))
+	pool := executor.NewSingleGPool(context.Background(), executor.WithTaskQueueCap(10))
 	futureList := make([]executor.Future, 0)
 	var f executor.Future
-	for i := 0; i < 10; i++ {
-		task := &MyCallable{param: i}
-		f = pool.Submit(task)
-		futureList = append(futureList, f)
-	}
-	pool.Shutdown() // Prohibit submission of new tasks
+	var err error
+	go func() {
+		for i := 0; i < 1000; i++ {
+			task := &MyCallable{param: i}
+			f, err = pool.Submit(task)
+			if err == nil {
+				fmt.Println("add task", i)
+				futureList = append(futureList, f)
+				//} else {
+				//	fmt.Println(err)
+			}
+		}
+	}()
+
+	time.Sleep(10 * time.Second)
+	pool.Shutdown()
 	var result *executor.GPResult
 	for _, f := range futureList {
 		result = f.Get()

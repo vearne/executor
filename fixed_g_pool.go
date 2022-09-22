@@ -89,7 +89,9 @@ func (p *FixedGPool) Submit(task Callable) (Future, error) {
 	return t, nil
 }
 
+// New tasks may be added even after shutdown
 func (p *FixedGPool) Shutdown() {
+	slog.Debug("FixedGPool-Shutdown()")
 	p.isShutdown.Set(true)
 }
 
@@ -102,4 +104,8 @@ func (p *FixedGPool) WaitTerminate() {
 		p.Shutdown()
 	}
 	p.wg.Wait()
+}
+
+func (p *FixedGPool) CurrentGCount() int {
+	return p.Size
 }
