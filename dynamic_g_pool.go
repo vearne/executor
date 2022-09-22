@@ -100,6 +100,9 @@ func NewDynamicGPool(ctx context.Context, min int, max int, opts ...dynamicOptio
 	atomic.StoreInt32(&pool.currGCount, pool.min)
 	pool.rwMutex.Unlock()
 
+	sw := NewShrinkWorker(&pool, defaultOpts.detectInterval, defaultOpts.meetCondNum)
+	go sw.Start()
+
 	return &pool
 }
 
@@ -211,6 +214,9 @@ func (w *ShrinkWorker) Start() {
 		select {
 		case <-ticker.C:
 			slog.Debug("ShrinkWorker check")
+			if atomic.LoadInt32(&w.pool.currGCount) <= w.pool.min {
+				return
+			}
 
 			busyCount := 0
 			w.pool.rwMutex.RLock()
@@ -221,6 +227,7 @@ func (w *ShrinkWorker) Start() {
 			}
 			w.pool.rwMutex.RUnlock()
 
+			slog.Debug("busyCount:%v", busyCount)
 			// < 1/4
 			if float64(busyCount)/float64(atomic.LoadInt32(&w.pool.currGCount)) < 0.25 {
 				w.currMeetCond++
@@ -232,11 +239,15 @@ func (w *ShrinkWorker) Start() {
 				// Put busy workers at the head of the array and idle workers at the end
 				reorganize(w.pool.workerList)
 				currGCount := atomic.LoadInt32(&w.pool.currGCount)
-				for i := currGCount - 1; i > currGCount/2; i-- {
+				var newCount int32
+				for i := currGCount - 1; i >= currGCount/2; i-- {
 					w.pool.workerList[i].Stop()
-					atomic.AddInt32(&w.pool.currGCount, -1)
+					newCount = atomic.AddInt32(&w.pool.currGCount, -1)
+					if newCount <= w.pool.min {
+						break
+					}
 				}
-				w.pool.workerList = w.pool.workerList[0 : currGCount-currGCount/2]
+				w.pool.workerList = w.pool.workerList[0:newCount]
 				w.pool.rwMutex.Unlock()
 			}
 		case <-w.ExitChan:
