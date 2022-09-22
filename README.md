@@ -10,16 +10,39 @@ goroutine pool
 * Multiple types of goroutine pools can be created(SingleGPool|FixedGPool|DynamicGPool).
 
 ## Multiple types of goroutine pools
-|||
-|:---|:---|:---|
+|category| explain                                                                      | remark                                                           |
+|:---|:------------------------------------------------------------------------|:-----------------------------------------------------------------|
+|SingleGPool| A single worker goroutine pool                                          |                                                                  |
+|FixedGPool| Fixed number of worker goroutine pools                                  |                                                                  |
+|DynamicGPool| A goroutine pool where the number of workers can be dynamically changed | min: Minimum number of workers; max:Maximum number of coroutines |
+
+### SingleGPool
+```
+executor.NewSingleGPool(context.Background(), executor.WithTaskQueueCap(10))
+```
+
+### FixedGPool
+```
+executor.NewFixedGPool(context.Background(), 10, executor.WithTaskQueueCap(10))
+```
+### DynamicGPool
+```
+executor.NewDynamicGPool(context.Background(), 5, 30,
+    executor.WithDynamicTaskQueueCap(5),
+    executor.WithDetectInterval(time.Second*10),
+    executor.WithMeetCondNum(3),
+)
+```
 
 ## debug
+set log level
 optional value: debug | info | warn | error
 ```
 export SIMPLE_LOG_LEVEL=debug
 ```
 
-## Inspired by Java Executors
+## Thanks
+Inspired by Java Executors
 [Executors](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Executors.html)
 
 ## Example
@@ -38,23 +61,36 @@ type MyCallable struct {
 }
 
 func (m *MyCallable) Call(ctx context.Context) *executor.GPResult {
-	time.Sleep(1 * time.Second)
+	time.Sleep(3 * time.Second)
 	r := executor.GPResult{}
 	r.Value = m.param * m.param
+	r.Err = nil
 	return &r
 }
 
 func main() {
-	pool := executor.NewFixedGPool(context.Background(), 10)
+	//pool := executor.NewFixedGPool(context.Background(), 10)
+	/*
+	   options:
+	   executor.WithTaskQueueCap() : set capacity of task queue
+	*/
+	pool := executor.NewFixedGPool(context.Background(), 10, executor.WithTaskQueueCap(10))
 	futureList := make([]executor.Future, 0)
 	var f executor.Future
-	for i := 0; i < 10; i++ {
-		task := &MyCallable{param: i}
-		f = pool.Submit(task)
-		futureList = append(futureList, f)
-	}
-	pool.Shutdown() // Prohibit submission of new tasks
-	//pool.Submit(&MyCallable{param: 20})
+	var err error
+	go func() {
+		for i := 0; i < 1000; i++ {
+			task := &MyCallable{param: i}
+			f, err = pool.Submit(task)
+			if err == nil {
+				fmt.Println("add task", i)
+				futureList = append(futureList, f)
+			}
+		}
+	}()
+
+	time.Sleep(10 * time.Second)
+	pool.Shutdown()
 	var result *executor.GPResult
 	for _, f := range futureList {
 		result = f.Get()
