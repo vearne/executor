@@ -7,6 +7,6 @@ type GPResult struct {
 	Err   error
 }
 
-func NewSingleGPool(ctx context.Context, size int) ExecutorService {
-	return NewFixedGPool(ctx, 1)
+func NewSingleGPool(ctx context.Context, opts ...option) ExecutorService {
+	return NewFixedGPool(ctx, 1, opts...)
 }

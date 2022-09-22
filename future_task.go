@@ -2,7 +2,6 @@ package executor
 
 import (
 	"context"
-	"errors"
 )
 
 type FutureTask struct {
@@ -48,7 +47,7 @@ func (f *FutureTask) run() {
 		f.isDone.Set(true)
 	case <-f.ctx.Done():
 		// cancel
-		f.ch <- &GPResult{Err: errors.New("Task cancelled")}
+		f.ch <- &GPResult{Err: TaskCanceledErr}
 	}
 }
 

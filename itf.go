@@ -26,4 +26,5 @@ type ExecutorService interface {
 	WaitTerminate()
 	TaskQueueCap() int
 	TaskQueueLength() int
+	Cancel() bool
 }

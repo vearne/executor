@@ -15,11 +15,17 @@ func (m *MyCallable) Call(ctx context.Context) *executor.GPResult {
 	time.Sleep(1 * time.Second)
 	r := executor.GPResult{}
 	r.Value = m.param * m.param
+	r.Err = nil
 	return &r
 }
 
 func main() {
-	pool := executor.NewSingleGPool(context.Background(), 10)
+	pool := executor.NewSingleGPool(context.Background())
+	/*
+	   options:
+	   executor.WithTaskQueueCap() : set capacity of task queue
+	*/
+	//pool := executor.NewSingleGPool(context.Background(), executor.WithTaskQueueCap(50))
 	futureList := make([]executor.Future, 0)
 	var f executor.Future
 	for i := 0; i < 10; i++ {

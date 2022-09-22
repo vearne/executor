@@ -5,9 +5,18 @@ import (
 	"sync"
 )
 
-const (
-	SIZE int = 50
-)
+type FixedGPoolOption struct {
+	taskQueueCap int
+}
+
+type option func(*FixedGPoolOption)
+
+// Optional parameters
+func WithTaskQueueCap(taskQueueCap int) option {
+	return func(t *FixedGPoolOption) {
+		t.taskQueueCap = taskQueueCap
+	}
+}
 
 type FixedGPool struct {
 	wg sync.WaitGroup
@@ -21,24 +30,43 @@ type FixedGPool struct {
 	cancel context.CancelFunc
 }
 
+func NewFixedGPool(ctx context.Context, size int, opts ...option) ExecutorService {
+	// check params
+	if size <= 0 {
+		size = 1
+	}
+
+	defaultOpts := &FixedGPoolOption{
+		taskQueueCap: SIZE,
+	}
+	// Loop through each option
+	for _, opt := range opts {
+		// Call the option giving the instantiated
+		opt(defaultOpts)
+	}
+
+	pool := FixedGPool{}
+	pool.Size = size
+	pool.ctx, pool.cancel = context.WithCancel(ctx)
+	pool.isShutdown = NewAtomicBool(false)
+	pool.TaskChan = make(chan *FutureTask, defaultOpts.taskQueueCap)
+	for i := 0; i < size; i++ {
+		go pool.Consume()
+	}
+	return &pool
+}
+
+func (p *FixedGPool) Cancel() bool {
+	p.cancel()
+	return true
+}
+
 func (p *FixedGPool) TaskQueueCap() int {
 	return cap(p.TaskChan)
 }
 
 func (p *FixedGPool) TaskQueueLength() int {
 	return len(p.TaskChan)
-}
-
-func NewFixedGPool(ctx context.Context, size int) ExecutorService {
-	pool := FixedGPool{}
-	pool.Size = size
-	pool.ctx, pool.cancel = context.WithCancel(ctx)
-	pool.isShutdown = NewAtomicBool(false)
-	pool.TaskChan = make(chan *FutureTask, SIZE)
-	for i := 0; i < size; i++ {
-		go pool.Consume()
-	}
-	return &pool
 }
 
 func (p *FixedGPool) Consume() {
@@ -48,10 +76,11 @@ func (p *FixedGPool) Consume() {
 	}
 }
 
+// When submitting tasks, blocking may occur
 func (p *FixedGPool) Submit(task Callable) Future {
+	p.wg.Add(1)
 	t := NewFutureTask(p.ctx, task)
 	p.TaskChan <- t
-	p.wg.Add(1)
 	return t
 }
 
