@@ -80,7 +80,7 @@ func (p *FixedGPool) Consume() {
 // When submitting tasks, blocking may occur
 func (p *FixedGPool) Submit(task Callable) (Future, error) {
 	if p.IsShutdown() {
-		return nil, PoolShutdownErr
+		return nil, ErrPoolShutdown
 	}
 	p.wg.Add(1)
 	t := NewFutureTask(p.ctx, task)

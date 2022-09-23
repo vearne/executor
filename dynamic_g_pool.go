@@ -115,7 +115,7 @@ func (p *DynamicGPool) Shutdown() {
 // When submitting tasks, blocking may occur
 func (p *DynamicGPool) Submit(task Callable) (Future, error) {
 	if p.IsShutdown() {
-		return nil, PoolShutdownErr
+		return nil, ErrPoolShutdown
 	}
 
 	p.wg.Add(1)
