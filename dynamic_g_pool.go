@@ -48,6 +48,7 @@ func WithMeetCondNum(meetCondNum int) dynamicOption {
 	}
 }
 
+// nolint: govet
 type DynamicGPool struct {
 	wg sync.WaitGroup
 

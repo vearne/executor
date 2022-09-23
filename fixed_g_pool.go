@@ -19,6 +19,7 @@ func WithTaskQueueCap(taskQueueCap int) option {
 	}
 }
 
+// nolint: govet
 type FixedGPool struct {
 	wg sync.WaitGroup
 
