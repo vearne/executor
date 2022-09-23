@@ -8,12 +8,16 @@ import (
 	"time"
 )
 
-// The number of worker in DynamicGPool changes dynamically. The minimum is Min and the maximum is Max.
-// Expansion rules: If the TaskChan is full, try to add workers to execute the task.
-// Shrinking rules:
-//     Condition: If the number of workers in a busy state is less than 1/4 of the total number of workers,
-//     try to reduce the number of workers by 1/2. Execute meetCondNum consecutive checks,
-//     with detectInterval every time, and perform shrinking if the conditions are met each time.
+/*
+   The number of worker in DynamicGPool changes dynamically. The minimum is Min and the maximum is Max.
+   Expansion rules: If the TaskChan is full, try to add workers to execute the task.
+   Shrinking rules:
+   1. `Condition`: If the number of workers in a busy state is less than 1/4 of the total number of workers,
+	   the condition is considered satisfied
+   2. Perform `meetCondNum` consecutive checks, each with a `detectInterval` interval.
+      If the conditions are met every time, the scaling is triggered.
+   3. The scaling action tries to reduce the number of workers by half
+*/
 
 type DynamicGPoolOption struct {
 	taskQueueCap int

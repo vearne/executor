@@ -5,47 +5,63 @@ goroutine pool
 
 * [中文 README](https://github.com/vearne/executor/blob/master/README_zh.md)
 
-## Feature
+## 1. Feature
 * supports cancel s single task or cancel all tasks in the goroutine pool.
+```
+Future.Cancel()
+```
+```
+ExecutorService.Cancel()
+```
 * Multiple types of goroutine pools can be created(SingleGPool|FixedGPool|DynamicGPool).
 
-## Multiple types of goroutine pools
+## 2. Multiple types of goroutine pools
 |category| explain                                                                      | remark                                                           |
 |:---|:------------------------------------------------------------------------|:-----------------------------------------------------------------|
 |SingleGPool| A single worker goroutine pool                                          |                                                                  |
 |FixedGPool| Fixed number of worker goroutine pools                                  |                                                                  |
-|DynamicGPool| A goroutine pool where the number of workers can be dynamically changed | min: Minimum number of workers; max:Maximum number of coroutines |
+|DynamicGPool| A goroutine pool where the number of workers can be dynamically changed | min: Minimum number of workers<br/> max:Maximum number of coroutines |
 
-### SingleGPool
+### 2.1 SingleGPool
 ```
-executor.NewSingleGPool(context.Background(), executor.WithTaskQueueCap(10))
-```
-
-### FixedGPool
-```
-executor.NewFixedGPool(context.Background(), 10, executor.WithTaskQueueCap(10))
-```
-### DynamicGPool
-```
-executor.NewDynamicGPool(context.Background(), 5, 30,
-    executor.WithDynamicTaskQueueCap(5),
-    executor.WithDetectInterval(time.Second*10),
-    executor.WithMeetCondNum(3),
-)
+NewSingleGPool(ctx context.Context, opts ...option) ExecutorService
 ```
 
-## debug
-set log level
-optional value: debug | info | warn | error
+### 2.2 FixedGPool
 ```
-export SIMPLE_LOG_LEVEL=debug
+NewFixedGPool(ctx context.Context, size int, opts ...option) ExecutorService
+```
+### 2.3 DynamicGPool
+```
+NewDynamicGPool(ctx context.Context, min int, max int, opts ...dynamicOption) ExecutorService
 ```
 
-## Thanks
-Inspired by Java Executors
-[Executors](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Executors.html)
+#### 2.3.1 Expansion rules
+If the task queue is full, try to add workers to execute the task.
 
-## Example
+#### 2.3.2 Shrinking rules:
+* `Condition`: If the number of workers in a busy state is less than 1/4 of the total number of workers, the condition is considered satisfied
+* Perform `meetCondNum` consecutive checks, each with a `detectInterval` interval. If the conditions are met every time, the scaling is triggered.
+* The scaling action tries to reduce the number of workers by half
+
+* `Condition`: If the number of workers in a busy state is less than 1/4 of the total number of workers,try to reduce the number of workers by 1/2.
+* Execute `meetCondNum` consecutive checks, with `detectInterval` every time, and perform shrinking if the conditions are met each time.
+
+## 3. Notice
+Since the executor uses the channel as the task queue, blocking may occur when submitting tasks.
+```
+Submit(task Callable) (Future, error)
+```
+If the goroutine pool is running in the background for a long time, we strongly recommend monitoring the usage of the task queue.
+```
+TaskQueueCap() int
+TaskQueueLength() int
+```
+
+
+## 4. Example
+[more examples](https://github.com/vearne/executor/tree/main/example)
+
 ```
 package main
 
@@ -99,3 +115,14 @@ func main() {
 	pool.WaitTerminate()
 }
 ```
+
+## 5. debug
+set log level
+optional value: debug | info | warn | error
+```
+export SIMPLE_LOG_LEVEL=debug
+```
+
+## 6. Thanks
+Inspired by Java Executors
+[Executors](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Executors.html)
