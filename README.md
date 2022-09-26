@@ -102,14 +102,14 @@ func main() {
 	}()
 
 	time.Sleep(10 * time.Second)
-	# 禁止提交新的任务(之前已经提交的任务不受影响)
+	// 禁止提交新的任务(之前已经提交的任务不受影响)
 	pool.Shutdown()
 	var result *executor.GPResult
 	for _, f := range futureList {
 		result = f.Get()
 		fmt.Println(result.Err, result.Value)
 	}
-	# 等待所有任务执行完毕
+	// 等待所有任务执行完毕
 	pool.WaitTerminate()
 }
 ```

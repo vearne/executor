@@ -108,14 +108,14 @@ func main() {
 	}()
 
 	time.Sleep(10 * time.Second)
-	# Prohibit submission of new tasks (tasks that have been submitted before are not affected)
+	// Prohibit submission of new tasks (tasks that have been submitted before are not affected)
 	pool.Shutdown()
 	var result *executor.GPResult
 	for _, f := range futureList {
 		result = f.Get()
 		fmt.Println(result.Err, result.Value)
 	}
-	# Wait for all tasks to complete
+	// Wait for all tasks to complete
 	pool.WaitTerminate()
 }
 ```
