@@ -13,6 +13,8 @@ Future.Cancel()
 ```
 ExecutorService.Cancel()
 ```
+You can also use context.Context to cancel task or pool.
+
 * Multiple types of goroutine pools can be created(SingleGPool|FixedGPool|DynamicGPool).
 
 ## 2. Multiple types of goroutine pools

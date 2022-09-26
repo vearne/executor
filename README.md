@@ -13,6 +13,7 @@ Future.Cancel()
 ```
 ExecutorService.Cancel()
 ```
+你也可以使用context.Context取消task或者pool。
 
 * 可以创建多种不同类型的协程池（SingleGPool|FixedGPool|DynamicGPool）
 
