@@ -29,20 +29,16 @@ func main() {
 	futureList := make([]executor.Future, 0)
 	var f executor.Future
 	var err error
-	go func() {
-		for i := 0; i < 1000; i++ {
-			task := &MyCallable{param: i}
-			f, err = pool.Submit(task)
-			if err == nil {
-				fmt.Println("add task", i)
-				futureList = append(futureList, f)
-				//} else {
-				//	fmt.Println(err)
-			}
-		}
-	}()
 
-	time.Sleep(10 * time.Second)
+	for i := 0; i < 50; i++ {
+		task := &MyCallable{param: i}
+		f, err = pool.Submit(task)
+		if err == nil {
+			fmt.Println("add task", i)
+			futureList = append(futureList, f)
+		}
+	}
+
 	pool.Shutdown()
 	var result *executor.GPResult
 	for _, f := range futureList {

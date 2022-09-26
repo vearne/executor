@@ -73,7 +73,7 @@ type MyCallable struct {
 }
 
 func (m *MyCallable) Call(ctx context.Context) *executor.GPResult {
-	time.Sleep(3 * time.Second)
+	time.Sleep(1 * time.Second)
 	r := executor.GPResult{}
 	r.Value = m.param * m.param
 	r.Err = nil
@@ -90,26 +90,22 @@ func main() {
 	futureList := make([]executor.Future, 0)
 	var f executor.Future
 	var err error
-	go func() {
-		for i := 0; i < 1000; i++ {
-			task := &MyCallable{param: i}
-			f, err = pool.Submit(task)
-			if err == nil {
-				fmt.Println("add task", i)
-				futureList = append(futureList, f)
-			}
-		}
-	}()
 
-	time.Sleep(10 * time.Second)
-	// 禁止提交新的任务(之前已经提交的任务不受影响)
+	for i := 0; i < 100; i++ {
+		task := &MyCallable{param: i}
+		f, err = pool.Submit(task)
+		if err == nil {
+			fmt.Println("add task", i)
+			futureList = append(futureList, f)
+		}
+	}
+
 	pool.Shutdown()
 	var result *executor.GPResult
 	for _, f := range futureList {
 		result = f.Get()
 		fmt.Println(result.Err, result.Value)
 	}
-	// 等待所有任务执行完毕
 	pool.WaitTerminate()
 }
 ```
