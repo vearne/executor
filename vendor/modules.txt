@@ -1,3 +1,0 @@
-# github.com/vearne/simplelog v0.0.1
-## explicit; go 1.18
-github.com/vearne/simplelog
