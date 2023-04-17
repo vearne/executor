@@ -84,7 +84,7 @@ func main() {
 	//pool := executor.NewFixedGPool(context.Background(), 10)
 	/*
 	   options:
-	   executor.WithTaskQueueCap() : set capacity of task queue
+	   executor.WithTaskQueueCap() : 设置task queue的容量
 	*/
 	pool := executor.NewFixedGPool(context.Background(), 10, executor.WithTaskQueueCap(10))
 	futureList := make([]executor.Future, 0)
@@ -100,6 +100,8 @@ func main() {
 		}
 	}
 
+	// 可选的
+	// 禁止提交新任务
 	pool.Shutdown()
 	var result *executor.GPResult
 	for _, f := range futureList {
